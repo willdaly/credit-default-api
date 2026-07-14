@@ -30,7 +30,8 @@ app = FastAPI(
     title="Credit Default Prediction API",
     description=(
         "Tuned MLP trained on the Default of Credit Card Clients dataset "
-        "(Yeh & Lien, 2009). Predicts probability of default next month."
+        "(Yeh & Lien, 2009). Predicts probability of default next month. "
+        "Continuously deployed from GitHub Actions."
     ),
 )
 
