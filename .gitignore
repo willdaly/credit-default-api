@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+DEPLOYMENT_STEPS.md
+email_to_professor.md

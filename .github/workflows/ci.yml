@@ -1,0 +1,37 @@
+# Continuous Integration: on every push or pull request, verify the training
+# pipeline still runs end to end and the committed artifacts pass all tests.
+# A red run blocks the deploy workflow (it only fires on main after this
+# pattern is respected via branch protection or careful merging).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run test suite against committed artifacts
+        run: pytest tests/ -v
+
+      - name: Smoke-run the training pipeline
+        run: python train.py
+
+      - name: Upload freshly trained model as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: credit-mlp-retrained
+          path: model/
