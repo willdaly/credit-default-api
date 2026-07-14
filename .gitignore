@@ -4,3 +4,5 @@ __pycache__/
 .venv/
 DEPLOYMENT_STEPS.md
 email_to_professor.md
+REPORT.md
+REPORT.docx

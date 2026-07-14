@@ -1,10 +1,13 @@
-# Continuous Deployment: after CI passes on main, push the repository to the
+# Continuous Deployment: after CI passes on main, upload the repository to the
 # Hugging Face Space, which rebuilds the Docker image and redeploys the API.
-# Pattern follows the Hugging Face Spaces GitHub Actions documentation:
+# Uses the Hugging Face Hub CLI (`hf upload`) rather than a raw `git push` so
+# that binary artifacts (the Keras model and the scaler) are routed to Xet/LFS
+# storage automatically — Hugging Face rejects binaries committed directly to
+# git. Pattern follows the Hugging Face Spaces documentation:
 # https://huggingface.co/docs/hub/en/spaces-github-actions
 #
-# Requires a repository secret named HF_TOKEN (a Hugging Face access token
-# with write permission). Set HF_USERNAME and SPACE_NAME below.
+# Requires a repository secret named HF_TOKEN (a Hugging Face access token with
+# write permission). Set HF_USERNAME and SPACE_NAME below.
 name: Deploy to Hugging Face Space
 
 on:
@@ -23,14 +26,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          lfs: true
 
-      - name: Push to Hugging Face Space
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the Hugging Face Hub CLI
+        run: pip install --upgrade huggingface_hub
+
+      - name: Upload to the Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          git push --force \
-            https://${HF_USERNAME}:${HF_TOKEN}@huggingface.co/spaces/${HF_USERNAME}/${SPACE_NAME} \
-            main
+          hf upload "${HF_USERNAME}/${SPACE_NAME}" . \
+            --repo-type space \
+            --commit-message "Deploy from GitHub Actions (${GITHUB_SHA::7})" \
+            --exclude ".git/*" \
+            --exclude ".github/*" \
+            --exclude "tests/*" \
+            --exclude "__pycache__/*" \
+            --exclude "*.pyc" \
+            --exclude ".pytest_cache/*" \
+            --exclude "REPORT.md" \
+            --exclude "DEPLOYMENT_STEPS.md" \
+            --exclude "email_to_professor.md"
